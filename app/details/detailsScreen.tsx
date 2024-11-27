@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 export default function Home() {
 
     const params = useLocalSearchParams();
-    const { code, number } = params;
+    const { info, text } = params;
     const router = useRouter();
+
+    const data = JSON.parse(info as string)
 
     useEffect(() => {
         const handleBackPress = () => true; // Bloquea el botón "atrás"
@@ -24,10 +26,14 @@ export default function Home() {
                 <Text style={styles.backText}>Volver</Text>
             </Pressable>
             <Text style={styles.title}>Resumen</Text>
-            <Text style={styles.label}>Codigo del medidor: {code}</Text>
+            <Text style={styles.label}>Codigo del medidor: {data.code}</Text>
             <Text style={styles.label}>
-                Nueva medicion: <Text style={styles.blackText}>{number}</Text>
+                Nueva medicion: <Text style={styles.blackText}>{data.valAnt}</Text>
                 </Text>
+            <Text style={styles.label}>
+                Nueva medicion: <Text style={styles.blackText}>{text}</Text>
+                </Text>
+            <Text style={styles.label}>Direccion: {data.direction}</Text>
         </SafeAreaView>
     );
 }

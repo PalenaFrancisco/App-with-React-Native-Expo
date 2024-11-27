@@ -3,14 +3,18 @@ import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 
+import MeasurementDB from "../db/Db";
+
 export default function Home() {
     const params = useLocalSearchParams();
     const { info } = params;
     const router = useRouter();
     const [text, setText] = useState("");
     const [isLoading, setIsLoading] = useState(false); // Estado para la rueda de carga
+    const data = JSON.parse(info as string);
 
     useEffect(() => {
+
         const handleBackPress = () => true; // Bloquea el botón "atrás"
         BackHandler.addEventListener("hardwareBackPress", handleBackPress);
 
@@ -18,15 +22,22 @@ export default function Home() {
     }, []);
 
     const showText = () => {
-        if (text) {
-            Keyboard.dismiss();
-            setIsLoading(true); // Muestra la rueda de carga
-            setTimeout(() => {
-                setIsLoading(false); // Oculta la rueda de carga
-                router.replace({ pathname: "/details/detailsScreen", params: { code: info, number: text } });
-            }, 3000);
+        if (text === "" || Number.parseInt(text) < data.valAnt) {
+            Alert.alert("Error", "Ingrese un nuevo valor que sea mayor o igual a " + data.valAnt);
         } else {
-            Alert.alert("Error", "Ingrese el nuevo valor");
+            try{
+                Keyboard.dismiss();
+                setIsLoading(true);
+                const newMeasurement = Number.parseInt(text);
+                MeasurementDB.updateMeasurement(data.code, newMeasurement);
+                
+                setTimeout(() => {
+                    setIsLoading(false);
+                    router.replace({ pathname: "/details/detailsScreen", params: { info, text } });
+                }, 3000);
+            }catch(error){
+                console.error(error);
+            }
         }
     };
 
@@ -38,7 +49,9 @@ export default function Home() {
                 <Text style={styles.backText}>Cancelar</Text>
             </Pressable>
             <Text style={styles.title}>Details</Text>
-            {info ? <Text style={{ color: "black" }}>Codigo del medidor: {info}</Text> : null}
+            <Text style={{ color: "black" }}>Codigo del medidor: {data.code}</Text>
+            <Text style={{ color: "black" }}>Direccion: {data.direction}</Text>
+            <Text style={{ color: "black" }}>Medicion anterior: {data.valAnt}</Text>
             <Text style={styles.label}>Ingresa nueva medicion:</Text>
             <TextInput
                 style={styles.input}

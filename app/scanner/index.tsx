@@ -1,6 +1,7 @@
 import { Camera, CameraView } from "expo-camera";
 import { Stack, useRouter} from "expo-router";
 import {
+  Alert,
   AppState,
   Linking,
   Platform,
@@ -10,6 +11,15 @@ import {
 } from "react-native";
 import Overlay from "./Overlay";
 import { useEffect, useRef } from "react";
+import MeasurementDB from "../db/Db";
+
+interface Measurement {
+  id?: number; 
+  code: number;
+  direction: string;
+  valAnt: number;
+  valNew?: number | null;
+}
 
 export default function Home() {
   const qrLock = useRef(false);
@@ -18,6 +28,17 @@ export default function Home() {
   // const navigation = useNavigation();
   const router = useRouter();
   // const params = useLocalSearchParams();
+
+  const searchCode = async(code: number) =>{
+    try{
+      const data = await MeasurementDB.getInfoCode(code);
+      if(data){
+        router.replace({pathname: "/details", params:{info: JSON.stringify(data)} })
+      }
+    }catch(error){
+      Alert.alert("Error", "No se encontro el codigo.")
+    }
+  }
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -50,7 +71,9 @@ export default function Home() {
         onBarcodeScanned={({ data }) => {
           if (data && !qrLock.current) {
             qrLock.current = true;
-            router.replace({pathname: "/details", params:{info: data} })
+            const number = Number.parseInt(data);
+            searchCode(number);
+
             setTimeout(() => {
               qrLock.current = false;
             }, 5000);

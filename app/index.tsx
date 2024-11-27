@@ -2,16 +2,31 @@ import { View, Text, StyleSheet, SafeAreaView, Pressable, BackHandler, Image } f
 import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import { useEffect } from "react";
+import MeasurementDB from "./db/Db";
 
 export default function Home() {
   const [permission, requestPermission] = useCameraPermissions();
   const isPermissionGranted = Boolean(permission?.granted);
 
+  const setupDataBase = async () => {
+    try {
+      await MeasurementDB.initDB();
+      const data = await MeasurementDB.getAll(); // Agregué await aquí
+      console.log(data); // Cambié console.warn por console.log
+    } catch (error) {
+      console.error("Error al inicializar la base de datos:", error);
+    }
+  };
+
   useEffect(() => {
-    const handleBackPress = () => true; // Bloquea el botón "atrás"
-    BackHandler.addEventListener("hardwareBackPress", handleBackPress);
-  
-    return () => BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
+    try{
+      const handleBackPress = () => true; // Bloquea el botón "atrás"
+      BackHandler.addEventListener("hardwareBackPress", handleBackPress);
+      setupDataBase()
+      return () => BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
+    }catch(error){
+      console.error(error);
+    }
   }, []);
 
   return (
