@@ -1,39 +1,90 @@
-import { View, Text, StyleSheet, SafeAreaView, Pressable, BackHandler, Image } from "react-native";
-import { Link, Stack, useLocalSearchParams } from "expo-router";
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  Pressable,
+  BackHandler,
+  Image,
+  Alert,
+} from "react-native";
+import { Link, router, Stack, useLocalSearchParams } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import MeasurementDB from "./db/Db";
 
 export default function Home() {
   const [permission, requestPermission] = useCameraPermissions();
   const isPermissionGranted = Boolean(permission?.granted);
 
+  const [dbInitialized, setDbInitialized] = useState(false); // Estado para verificar si DB está inicializada
+
   const setupDataBase = async () => {
+    if (dbInitialized) return; // Evita reinicializar si ya está inicializada
+
     try {
-      await MeasurementDB.initDB();
-      const data = await MeasurementDB.getAll(); // Agregué await aquí
-      console.log(data); // Cambié console.warn por console.log
+      console.log("Initializing database...");
+      const dbBool = await MeasurementDB.initDB();
+      console.log(dbBool);
+      console.log("Database initialized");
+      
+
+      setDbInitialized(true); // Marca la base de datos como inicializada
+
+      // const data = await MeasurementDB.getAll();
+      // console.log(data);
+      // router.push("/loaderScreen");
     } catch (error) {
-      console.error("Error al inicializar la base de datos:", error);
+      console.error("Error initializing the database:", error);
     }
   };
 
   useEffect(() => {
-    try{
+    try {
+      if (!dbInitialized) {
+        setupDataBase();
+      }else{
+        console.log("Tabla ya creada.")
+      }
       const handleBackPress = () => true; // Bloquea el botón "atrás"
       BackHandler.addEventListener("hardwareBackPress", handleBackPress);
-      setupDataBase()
-      return () => BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
-    }catch(error){
+      return () => {
+        BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
+      };
+    } catch (error) {
       console.error(error);
     }
-  }, []);
+  }, [dbInitialized]);
+
+  const handleReset = () => {
+    Alert.alert("Resetear", "¿Estas seguro de reiniciar la Tabla?", [
+      {
+        text: 'Resetear',
+        onPress: async () => {
+          await MeasurementDB.resetTable();
+          // router.push("/loaderScreen");
+        },
+        style: "destructive",
+      },
+      {
+        text: 'Cancelar',
+        onPress: () => "",
+        style: 'cancel',
+      }
+    ])
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ title: "Overview", headerShown: false }} />
+      <View style={styles.navbar}>
+        <Text style={styles.title}>Mi Aplicación</Text>
+        <Pressable onPress={handleReset} style={styles.resetButton}>
+          <Text style={styles.buttonText}>Reiniciar Tabla</Text>
+        </Pressable>
+      </View>
       <Image
-        source={require('../assets/images/logoFirmat.png')} // Ruta de la imagen local
+        source={require("../assets/images/logoFirmat.png")} // Ruta de la imagen local
         style={styles.image}
       />
       <View style={styles.content}>
@@ -43,7 +94,12 @@ export default function Home() {
             <Text style={styles.buttonText}>Solicitar Permisos</Text>
           </Pressable>
           <Link href={"/scanner"} asChild>
-            <Pressable disabled={!isPermissionGranted} style={!isPermissionGranted ? styles.buttonBlocked : styles.button}>
+            <Pressable
+              disabled={!isPermissionGranted}
+              style={
+                !isPermissionGranted ? styles.buttonBlocked : styles.button
+              }
+            >
               <Text style={styles.buttonText}>Escanear QR</Text>
             </Pressable>
           </Link>
@@ -58,13 +114,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     backgroundColor: "white", // Fondo oscuro
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: 20,
   },
   image: {
     width: 220, // Ancho de la imagen
     height: 120, // Alto de la imagen
-    resizeMode: 'contain', // Ajuste de la imagen
+    resizeMode: "contain", // Ajuste de la imagen
     marginBottom: 30,
   },
   content: {
@@ -81,7 +137,7 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     gap: 20,
-    width: '100%',
+    width: "100%",
   },
   button: {
     backgroundColor: "#0E7AFE", // Color azul de los botones
@@ -105,6 +161,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     elevation: 4, // Sombra sutil
-    opacity:0.5
-  }
+    opacity: 0.5,
+  },
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#0E7AFE',
+    elevation: 4, // Sombra en Android
+    shadowColor: '#000', // Sombra en iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    width:"100%",
+    marginTop: 0,
+    marginBottom:150
+  },
+  resetButton: {
+    backgroundColor: '#ff4d4d', // Color rojo para indicar peligro
+    padding: 10,
+    borderRadius: 5,
+  },
 });

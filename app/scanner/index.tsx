@@ -34,9 +34,19 @@ export default function Home() {
       const data = await MeasurementDB.getInfoCode(code);
       if(data){
         router.replace({pathname: "/details", params:{info: JSON.stringify(data)} })
+      }else{
+        Alert.alert("Error", "Desea volver?",[{
+          text: 'Volver',
+          onPress: () => router.replace("/"),
+          style: 'cancel',
+        },{
+          text: 'Intentar de Nuevo',
+          onPress: () => "",
+          style: 'default',
+        }])
       }
     }catch(error){
-      Alert.alert("Error", "No se encontro el codigo.")
+      console.error(error);
     }
   }
 

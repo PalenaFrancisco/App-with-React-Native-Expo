@@ -15,60 +15,55 @@ export const initDB = async () => {
   const DATABASE_VERSION = 1;
 
   // Abre la base de datos de manera asincrónica
-  db = await SQLite.openDatabaseAsync("testMeasurements.db");
+  db = await SQLite.openDatabaseAsync("testmeasurement.db");
 
   try {
-    const { user_version: currentDbVersion } = 
+    const { user_version: currentDbVersion } =
       (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version')) || { user_version: 0 };
 
     if (currentDbVersion >= DATABASE_VERSION) {
+      console.log("Database is up to date");
       return;
     }
 
     if (currentDbVersion < 1) {
-      // Verificar si la tabla ya existe antes de crearla
-      const tableExists = await db.getFirstAsync(
-        `SELECT name 
-        FROM sqlite_master 
-        WHERE type='table' AND name='measurements';`
+      console.log("Creating new table measurement");
+
+      await db.execAsync(
+        `CREATE TABLE IF NOT EXISTS measurement (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          code INTEGER NOT NULL,
+          direction TEXT NOT NULL,
+          valAnt INTEGER NOT NULL CHECK (valAnt >= 0),
+          valNew INTEGER CHECK (valNew IS NULL OR (valNew >= 0 AND valNew >= valAnt))
+        );`
       );
 
-      // Si la tabla no existe, crearla
-      if (!tableExists) {
-        await db.execAsync(
-          `CREATE TABLE measurements IF NOT EXISTS(
-            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            code INTEGER NOT NULL,
-            direction TEXT NOT NULL,
-            valAnt INTEGER NOT NULL CHECK (valAnt >= 0),
-            valNew INTEGER CHECK (valNew IS NULL OR (valNew >= 0 AND valNew >= valAnt))
-          );`
-        );
-        await db.execAsync(
-          `INSERT INTO measurements (code, direction, valAnt, valNew) VALUES (123456789012, 'Bv. Colon 611 bis', 25, NULL);`
-        );
-        await db.execAsync(
-          `INSERT INTO measurements (code, direction, valAnt, valNew) VALUES (987654321098, 'Corrientes 1250', 45, NULL);`
-        );
-        console.log("DataBase Created");
-      }
-      console.log("DataBase Already Exists");
+      await db.execAsync(
+        `INSERT INTO measurement (code, direction, valAnt, valNew) VALUES 
+        (123456789012, 'Bv. Colon 611 bis', 25, NULL),
+        (987654321098, 'Corrientes 1250', 45, NULL);`
+      );
+      console.log("Table created and initial data inserted");
     }
 
     // Actualizar la versión de la base de datos
     await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
+    console.log("Database version updated to", DATABASE_VERSION);
+    return (`PRAGMA user_version = ${DATABASE_VERSION}`);
   } catch (error) {
     console.error("Migration failed:", error);
     throw error;
   }
 };
 
-export const addMeasurement = async (measurement: number)=> {
+export const addMeasurement = async (measurement: Measurement) => {
   try {
     await db.runAsync(
-      `INSERT INTO measurements (valNew) VALUES (?)`,
-      [measurement]
+      `INSERT INTO measurement (code, direction, valAnt, valNew) VALUES (?, ?, ?, ?)`,
+      [measurement.code, measurement.direction, measurement.valAnt, null]
     );
+    console.log("Measurement added");
   } catch (error) {
     console.error("Error adding measurement:", error);
     throw error;
@@ -76,49 +71,76 @@ export const addMeasurement = async (measurement: number)=> {
 };
 
 export const getAll = async () => {
-    try {
-        const info = await db.getAllAsync(`SELECT * FROM measurements;`);
-        return info;
-    } catch (error) {
-        console.error("Error al obtener todas las mediciones:", error);
-        throw error;
-    }
+  try {
+    const info = await db.getAllAsync(`SELECT * FROM measurement;`);
+    return info;
+  } catch (error) {
+    console.error("Error fetching all measurement:", error);
+    throw error;
+  }
 };
 
-
 export const getInfoCode = async (code: number) => {
-    try {
-        const result = await db.getFirstAsync(
-          `SELECT * FROM measurements WHERE code = ?;`,
-          [code]
-        );
+  try {
+    const result = await db.getFirstAsync(
+      `SELECT * FROM measurement WHERE code = ?;`,
+      [code]
+    );
 
-        return result;
-      } catch (error) {
-        console.error("Error al obtener la medición:", error);
-        throw error;
-      }
-}
+    return result;
+  } catch (error) {
+    console.error("Error fetching measurement by code:", error);
+    throw error;
+  }
+};
 
 export const updateMeasurement = async (code: number, newValue: number) => {
-    try {
-      await db.runAsync(
-        `UPDATE measurements SET valNew = ? WHERE code = ?;`,
-        [newValue, code]
+  try {
+    await db.runAsync(
+      `UPDATE measurement SET valNew = ? WHERE code = ?;`,
+      [newValue, code]
+    );
+    console.log(`Measurement with code ${code} updated to valNew = ${newValue}`);
+  } catch (error) {
+    console.error("Error updating measurement:", error);
+    throw error;
+  }
+};
+
+export const resetTable = async () => {
+  try {
+    const tableExists = await db.getFirstAsync(
+      `SELECT name 
+      FROM sqlite_master 
+      WHERE type='table' AND name='measurement';`
+    );
+
+    if (tableExists) {
+      await db.execAsync("DELETE FROM measurement;");
+      console.log("Table reset");
+
+      await db.execAsync(
+        `INSERT INTO measurement (code, direction, valAnt, valNew) VALUES 
+        (123456789012, 'Bv. Colon 611 bis', 25, NULL),
+        (987654321098, 'Corrientes 1250', 45, NULL);`
       );
-      console.log(`Medición con código ${code} actualizada a valNew = ${newValue}`);
-    } catch (error) {
-      console.error("Error al actualizar la medición:", error);
-      throw error;
+      console.log("Initial data reinserted");
+    } else {
+      console.log("Table measurement does not exist");
     }
+  } catch (error) {
+    console.error("Error resetting table:", error);
+    throw error;
+  }
 };
 
 const MeasurementDB = {
-    initDB,
-    addMeasurement,
-    getInfoCode,
-    updateMeasurement,
-    getAll,
+  initDB,
+  addMeasurement,
+  getInfoCode,
+  updateMeasurement,
+  getAll,
+  resetTable,
 };
-  
+
 export default MeasurementDB;
