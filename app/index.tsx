@@ -20,20 +20,19 @@ export default function Home() {
   const [dbInitialized, setDbInitialized] = useState(false); // Estado para verificar si DB está inicializada
 
   const setupDataBase = async () => {
-    if (dbInitialized) return; // Evita reinicializar si ya está inicializada
-
+    if (dbInitialized) return;
+  
     try {
+      // Check if database is already set up
+      const existingData = await MeasurementDB.getAll();
+      if (existingData.length > 0) {
+        setDbInitialized(true);
+        return;
+      }
+  
       console.log("Initializing database...");
-      const dbBool = await MeasurementDB.initDB();
-      console.log(dbBool);
-      console.log("Database initialized");
-      
-
-      setDbInitialized(true); // Marca la base de datos como inicializada
-
-      // const data = await MeasurementDB.getAll();
-      // console.log(data);
-      // router.push("/loaderScreen");
+      await MeasurementDB.initDB();
+      setDbInitialized(true);
     } catch (error) {
       console.error("Error initializing the database:", error);
     }
@@ -101,6 +100,11 @@ export default function Home() {
               }
             >
               <Text style={styles.buttonText}>Escanear QR</Text>
+            </Pressable>
+          </Link>
+          <Link href={"/manualInput"} asChild>
+            <Pressable style={styles.button}>
+              <Text style={styles.buttonText}>Ingreso Manual</Text>
             </Pressable>
           </Link>
         </View>
