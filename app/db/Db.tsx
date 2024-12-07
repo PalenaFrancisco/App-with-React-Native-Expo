@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Definición de la interfaz para una medición
 interface Measurement {
@@ -14,16 +15,22 @@ let db: SQLite.SQLiteDatabase; // Declarar la variable de la base de datos
 export const initDB = async () => {
   const DATABASE_VERSION = 1;
 
-  // Abre la base de datos de manera asincrónica
-  db = await SQLite.openDatabaseAsync("testmeasurement.db");
-
   try {
-    const { user_version: currentDbVersion } =
-      (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version')) || { user_version: 0 };
+    const firstTimeSetup = await AsyncStorage.getItem("DB_INITIALIZED");
+
+    if (firstTimeSetup) {
+      // Si ya está inicializada, solo abre la base de datos
+      db = await SQLite.openDatabaseAsync("testmeasurement.db");
+      return false; // Indica que no es la primera vez
+    }
+
+    db = await SQLite.openDatabaseAsync("testmeasurement.db");
+    const { user_version: currentDbVersion } = (await db.getFirstAsync<{
+      user_version: number;
+    }>("PRAGMA user_version")) || { user_version: 0 };
 
     if (currentDbVersion >= DATABASE_VERSION) {
       console.log("Database is up to date");
-      return;
     }
 
     if (currentDbVersion < 1) {
@@ -47,10 +54,13 @@ export const initDB = async () => {
       console.log("Table created and initial data inserted");
     }
 
+    
+
     // Actualizar la versión de la base de datos
     await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
     console.log("Database version updated to", DATABASE_VERSION);
-    return (`PRAGMA user_version = ${DATABASE_VERSION}`);
+    await AsyncStorage.setItem("DB_INITIALIZED", "true");
+    return true;
   } catch (error) {
     console.error("Migration failed:", error);
     throw error;
@@ -96,11 +106,13 @@ export const getInfoCode = async (code: number) => {
 
 export const updateMeasurement = async (code: number, newValue: number) => {
   try {
-    await db.runAsync(
-      `UPDATE measurement SET valNew = ? WHERE code = ?;`,
-      [newValue, code]
+    await db.runAsync(`UPDATE measurement SET valNew = ? WHERE code = ?;`, [
+      newValue,
+      code,
+    ]);
+    console.log(
+      `Measurement with code ${code} updated to valNew = ${newValue}`
     );
-    console.log(`Measurement with code ${code} updated to valNew = ${newValue}`);
   } catch (error) {
     console.error("Error updating measurement:", error);
     throw error;

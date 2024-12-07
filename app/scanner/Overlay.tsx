@@ -2,6 +2,7 @@ import { Canvas, DiffRect, rect, rrect } from "@shopify/react-native-skia";
 import { Dimensions, Platform, StyleSheet, Text, Pressable, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { View } from "react-native-reanimated/lib/typescript/Animated";
 
 const { width, height } = Dimensions.get("window");
 

@@ -3,6 +3,7 @@ import { Stack, useRouter} from "expo-router";
 import {
   Alert,
   AppState,
+  Dimensions,
   Linking,
   Platform,
   SafeAreaView,
@@ -21,13 +22,15 @@ interface Measurement {
   valNew?: number | null;
 }
 
+const { width, height } = Dimensions.get("window");
+
 export default function Home() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
 
   // const navigation = useNavigation();
   const router = useRouter();
-  // const params = useLocalSearchParams();
+  // const params = useLocalSearchParams(); 
 
   const searchCode = async(code: number) =>{
     try{
@@ -74,9 +77,9 @@ export default function Home() {
           headerShown: false,
         }}
       />
-      <StatusBar hidden={true} />
+      <StatusBar hidden={false} />
       <CameraView
-        style={StyleSheet.absoluteFillObject}
+        style={styles.camera_container}
         facing="back"
         onBarcodeScanned={({ data }) => {
           if (data && !qrLock.current) {
@@ -94,3 +97,12 @@ export default function Home() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  camera_container: {
+    width: width,
+    height: height,
+    position:"relative",
+    top: 0,
+    left: 0,}
+})

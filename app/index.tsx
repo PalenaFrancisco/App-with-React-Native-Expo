@@ -23,16 +23,13 @@ export default function Home() {
     if (dbInitialized) return;
   
     try {
-      // Check if database is already set up
-      const existingData = await MeasurementDB.getAll();
-      if (existingData.length > 0) {
-        setDbInitialized(true);
-        return;
+      const db = await MeasurementDB.initDB();
+      setDbInitialized(db);
+      if(db){
+        console.log("Data base configured")
+      }else{
+        console.log("Data base already exists")
       }
-  
-      console.log("Initializing database...");
-      await MeasurementDB.initDB();
-      setDbInitialized(true);
     } catch (error) {
       console.error("Error initializing the database:", error);
     }
