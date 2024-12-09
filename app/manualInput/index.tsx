@@ -23,6 +23,7 @@ export default function Home(){
     const showText = async() =>{
         if(text == ""){
             Alert.alert("Error", "Ingrese un valor");
+            Keyboard.dismiss();
         }else{
             try{
                 Keyboard.dismiss();
@@ -33,13 +34,13 @@ export default function Home(){
                 if(data){
                     router.replace({pathname:"/details", params:{info: JSON.stringify(data)}})
                 }else{
-                    Alert.alert("Error", "Desea volver?",[{
+                    Alert.alert("Codigo no encontrado", "Desea volver?",[{
                         text: 'Volver',
                         onPress: () => router.replace("/"),
                         style: 'cancel',
                     },{
                         text: 'Intentar de Nuevo',
-                        onPress: () => "",
+                        onPress: () => setIsLoading(false),
                         style: 'default',
                     }])
                 }

@@ -1,8 +1,7 @@
 import { Canvas, DiffRect, rect, rrect } from "@shopify/react-native-skia";
-import { Dimensions, Platform, StyleSheet, Text, Pressable, SafeAreaView } from "react-native";
+import { Dimensions, Platform, StyleSheet, Text, Pressable, SafeAreaView, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { View } from "react-native-reanimated/lib/typescript/Animated";
 
 const { width, height } = Dimensions.get("window");
 
@@ -19,13 +18,12 @@ const inner = rrect(
   50,  // bordes redondeados
   50   // bordes redondeados
 );
-// console.warn(height, width);
 
 const Overlay = () => {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Pressable style={styles.backButton} onPress={() => router.replace("/")}>
         <Ionicons name="arrow-back" size={24} color="white" />
         <Text style={styles.backText}>Cancelar</Text>
@@ -33,18 +31,16 @@ const Overlay = () => {
       <Canvas
         style={styles.canvas}
       >
-        {/* Fondo oscuro alrededor del área de escaneo */}
-        <DiffRect inner={inner} outer={outer} color="red" opacity={0.6} />
+        <DiffRect inner={inner} outer={outer} color="gray" opacity={0.6} />
       </Canvas>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    zIndex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   backButton: {
     position: "absolute",
@@ -52,7 +48,7 @@ const styles = StyleSheet.create({
     left: 20,
     flexDirection: "row",
     alignItems: "center",
-    zIndex: 1,  // Asegura que el botón esté encima del canvas
+    zIndex: 1,
     backgroundColor: "#ff531a",
     padding:10,
     borderRadius:10,
@@ -64,11 +60,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   canvas: {
-    width: width,
-    height: height,
-    position: 'absolute',
-    top: 0,
-    left: 0,
+    ...StyleSheet.absoluteFillObject,
   }
 });
 

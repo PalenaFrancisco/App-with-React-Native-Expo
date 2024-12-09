@@ -1,4 +1,4 @@
-import { Camera, CameraView } from "expo-camera";
+import { CameraView } from "expo-camera";
 import { Stack, useRouter} from "expo-router";
 import {
   Alert,
@@ -14,15 +14,6 @@ import Overlay from "./Overlay";
 import { useEffect, useRef } from "react";
 import MeasurementDB from "../db/Db";
 
-interface Measurement {
-  id?: number; 
-  code: number;
-  direction: string;
-  valAnt: number;
-  valNew?: number | null;
-}
-
-const { width, height } = Dimensions.get("window");
 
 export default function Home() {
   const qrLock = useRef(false);
@@ -38,7 +29,7 @@ export default function Home() {
       if(data){
         router.replace({pathname: "/details", params:{info: JSON.stringify(data)} })
       }else{
-        Alert.alert("Error", "Desea volver?",[{
+        Alert.alert("Codigo no encontrado", "Desea volver?",[{
           text: 'Volver',
           onPress: () => router.replace("/"),
           style: 'cancel',
@@ -70,14 +61,14 @@ export default function Home() {
   }, []);
 
   return (
-    <SafeAreaView style={StyleSheet.absoluteFillObject}>
+    <SafeAreaView style={{flex: 1}}>
       <Stack.Screen
         options={{
           title: "Overview",
           headerShown: false,
         }}
       />
-      <StatusBar hidden={false} />
+      
       <CameraView
         style={styles.camera_container}
         facing="back"
@@ -92,17 +83,15 @@ export default function Home() {
             }, 5000);
           }
         }}
-      />
-      <Overlay />
+      >
+        {<Overlay />}
+      </CameraView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   camera_container: {
-    width: width,
-    height: height,
-    position:"relative",
-    top: 0,
-    left: 0,}
+    ...StyleSheet.absoluteFillObject,
+  }
 })

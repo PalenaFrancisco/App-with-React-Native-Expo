@@ -7,11 +7,15 @@ import {
   BackHandler,
   Image,
   Alert,
+  TouchableOpacity
 } from "react-native";
 import { Link, router, Stack, useLocalSearchParams } from "expo-router";
 import { useCameraPermissions } from "expo-camera";
 import { useEffect, useState } from "react";
 import MeasurementDB from "./db/Db";
+import SideMenu from "./sideMenu/SideMenu"
+import { StatusBar } from "expo-status-bar";
+
 
 export default function Home() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -25,10 +29,10 @@ export default function Home() {
     try {
       const db = await MeasurementDB.initDB();
       setDbInitialized(db);
-      if(db){
-        console.log("Data base configured")
-      }else{
+      if(!db){
         console.log("Data base already exists")
+      }else{
+        console.log("Data base configured")
       }
     } catch (error) {
       console.error("Error initializing the database:", error);
@@ -73,12 +77,17 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ title: "Overview", headerShown: false }} />
-      <View style={styles.navbar}>
+      {/* <View style={styles.navbar}>
         <Text style={styles.title}>Mi Aplicación</Text>
         <Pressable onPress={handleReset} style={styles.resetButton}>
           <Text style={styles.buttonText}>Reiniciar Tabla</Text>
         </Pressable>
-      </View>
+      </View> */}
+      <StatusBar
+        backgroundColor="transparent"
+        translucent={true}
+      />
+      <SideMenu />
       <Image
         source={require("../assets/images/logoFirmat.png")} // Ruta de la imagen local
         style={styles.image}
@@ -115,7 +124,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     backgroundColor: "white", // Fondo oscuro
-    justifyContent: "flex-start",
+    justifyContent: "center",
     padding: 20,
   },
   image: {
